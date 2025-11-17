@@ -1,0 +1,57 @@
+name: summarize_fast
+description: "AI-powered document & image summarization with Gemini 2.5 Flash"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Core Icons
+  cupertino_icons: ^1.0.8
+
+  # Gemini AI Integration
+  google_generative_ai: ^0.4.6
+
+  # File Handling
+  file_picker: ^8.1.4
+  image_picker: ^1.1.2
+  mime: ^2.0.0
+
+  # Export Functionality
+  pdf: ^3.11.1
+  path_provider: ^2.1.5
+  share_plus: ^10.1.2
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # Environment & Configuration
+  flutter_dotenv: ^5.2.1
+
+  # UI Components
+  google_fonts: ^6.2.1
+  loading_animation_widget: ^1.3.0
+  flutter_markdown: ^0.7.4+1
+
+  # Utilities
+  intl: ^0.20.1
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Assets
+  assets:
+    - .env
+    - assets/images/
+    - assets/icons/

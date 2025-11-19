@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 
 /// Model for file metadata
 class FileMetadata {
@@ -18,7 +19,7 @@ class FileMetadata {
     this.mimeType,
   });
 
-  /// Create from File object
+  /// Create from File object (for native platforms)
   factory FileMetadata.fromFile(File file) {
     final fileName = file.path.split(Platform.pathSeparator).last;
     final extension = fileName.contains('.')
@@ -31,6 +32,61 @@ class FileMetadata {
       sizeBytes: file.lengthSync(),
       extension: extension,
       selectedAt: DateTime.now(),
+    );
+  }
+
+  /// Create from PlatformFile (for web platform)
+  factory FileMetadata.fromPlatformFile(PlatformFile platformFile, {bool isWeb = true}) {
+    final fileName = platformFile.name;
+    final extension = fileName.contains('.')
+        ? fileName.split('.').last.toLowerCase()
+        : '';
+    
+    // On web, path property throws exception, so we use a virtual path
+    final filePath = isWeb ? 'web:///${platformFile.name}' : (platformFile.path ?? 'unknown');
+    
+    // Get proper MIME type from extension
+    String? mimeType;
+    switch (extension) {
+      case 'pdf':
+        mimeType = 'application/pdf';
+        break;
+      case 'png':
+        mimeType = 'image/png';
+        break;
+      case 'jpg':
+      case 'jpeg':
+        mimeType = 'image/jpeg';
+        break;
+      case 'gif':
+        mimeType = 'image/gif';
+        break;
+      case 'webp':
+        mimeType = 'image/webp';
+        break;
+      case 'txt':
+        mimeType = 'text/plain';
+        break;
+      case 'md':
+        mimeType = 'text/markdown';
+        break;
+      case 'json':
+        mimeType = 'application/json';
+        break;
+      case 'csv':
+        mimeType = 'text/csv';
+        break;
+      default:
+        mimeType = 'application/octet-stream';
+    }
+    
+    return FileMetadata(
+      name: fileName,
+      path: filePath,
+      sizeBytes: platformFile.size,
+      extension: extension,
+      selectedAt: DateTime.now(),
+      mimeType: mimeType,
     );
   }
 

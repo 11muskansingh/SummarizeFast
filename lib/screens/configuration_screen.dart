@@ -6,6 +6,7 @@ import '../widgets/common_widgets.dart';
 import '../models/summary_size.dart';
 import '../providers/app_providers.dart';
 import '../services/prompt_service.dart';
+import 'summary_display_screen.dart';
 
 /// Screen for configuring summary generation options
 class ConfigurationScreen extends ConsumerStatefulWidget {
@@ -284,40 +285,77 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
   }
 
   Future<void> _generateSummary(BuildContext context) async {
+    print('⚙️ [ConfigurationScreen] _generateSummary() called');
     final fileState = ref.read(fileStateProvider);
     final summarySize = ref.read(summaryConfigProvider);
     final customPrompt = _customPromptController.text.trim();
 
+    print('⚙️ [ConfigurationScreen] FileState check:');
+    print('   - Has file: ${fileState.selectedFile != null}');
+    print('   - Has bytes: ${fileState.fileBytes != null}');
+    print('   - Has metadata: ${fileState.fileMetadata != null}');
+    print('   - Summary size: ${summarySize.name}');
+
+    // Validate we have file data
+    if (!fileState.hasFile) {
+      print('❌ [ConfigurationScreen] No file data available');
+      _showError(context, 'No file selected');
+      return;
+    }
+
     // Validate custom prompt if provided
     if (customPrompt.isNotEmpty) {
+      print('⚙️ [ConfigurationScreen] Validating custom prompt');
       final validation = PromptService.validateCustomPrompt(customPrompt);
       if (!validation.isValid) {
+        print('❌ [ConfigurationScreen] Invalid custom prompt: ${validation.error}');
         _showError(context, validation.error ?? 'Invalid prompt');
         return;
       }
     }
 
+    print('✅ [ConfigurationScreen] Starting summary generation');
     // Start generation
     await ref.read(summaryStateProvider.notifier).generateSummary(
-          file: fileState.selectedFile!,
+          file: fileState.selectedFile,
+          fileBytes: fileState.fileBytes,
           metadata: fileState.fileMetadata!,
           summarySize: summarySize,
           customInstructions: customPrompt.isEmpty ? null : customPrompt,
         );
+    print('⚙️ [ConfigurationScreen] Summary generation completed');
 
     // Check result
     final summaryState = ref.read(summaryStateProvider);
+    print('⚙️ [ConfigurationScreen] Summary state check:');
+    print('   - Has versions: ${summaryState.hasVersions}');
+    print('   - Has error: ${summaryState.error != null}');
+    print('   - Error message: ${summaryState.error}');
+    print('   - Is generating: ${summaryState.isGenerating}');
+    
     if (mounted) {
+      print('⚙️ [ConfigurationScreen] Closing generation dialog');
       Navigator.pop(context); // Close generation dialog
 
       if (summaryState.hasVersions) {
-        // Success - navigate to summary screen
-        // TODO: Navigate to summary display screen when created
-        _showSuccess(context, 'Summary generated successfully!');
+        // Success - show summary
+        print('✅ [ConfigurationScreen] Summary generated successfully!');
         setState(() => _isGenerating = false);
+        
+        // Show the generated summary
+        final currentVersion = summaryState.currentVersion;
+        if (currentVersion != null) {
+          print('📄 [ConfigurationScreen] Displaying summary: ${currentVersion.content.substring(0, 50)}...');
+          _showSummaryDialog(context, currentVersion.content);
+        } else {
+          _showSuccess(context, 'Summary generated successfully!');
+        }
       } else if (summaryState.error != null) {
+        print('❌ [ConfigurationScreen] Generation error: ${summaryState.error}');
         _showError(context, summaryState.error!);
         setState(() => _isGenerating = false);
+      } else {
+        print('⚠️ [ConfigurationScreen] No versions and no error - unexpected state');
       }
     }
   }
@@ -352,6 +390,101 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
                           color: AppColors.textSecondary,
                         ),
                     textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSummaryDialog(BuildContext context, String summary) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: GlassCard(
+            child: Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+                maxWidth: 600,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Padding(
+                    padding: AppSpacing.paddingLG,
+                    child: Row(
+                      children: [
+                        Icon(Icons.description, color: AppColors.primary, size: 28),
+                        SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text(
+                            'Generated Summary',
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(height: 1),
+                  
+                  // Summary Content
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: AppSpacing.paddingXL,
+                      child: SelectableText(
+                        summary,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              height: 1.6,
+                              fontSize: 16,
+                            ),
+                      ),
+                    ),
+                  ),
+                  
+                  Divider(height: 1),
+                  
+                  // Actions
+                  Padding(
+                    padding: AppSpacing.paddingLG,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('Close'),
+                        ),
+                        SizedBox(width: AppSpacing.sm),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context); // Close dialog first
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SummaryDisplayScreen(),
+                              ),
+                            );
+                          },
+                          icon: Icon(Icons.open_in_new),
+                          label: Text('View Full Details'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

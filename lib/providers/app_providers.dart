@@ -17,6 +17,7 @@ import '../services/version_control_service.dart';
 /// State for file selection and upload
 class FileState {
   final File? selectedFile;
+  final List<int>? fileBytes; // For web platform
   final FileMetadata? fileMetadata;
   final String? uploadedFileUri;
   final bool isUploading;
@@ -25,6 +26,7 @@ class FileState {
 
   FileState({
     this.selectedFile,
+    this.fileBytes,
     this.fileMetadata,
     this.uploadedFileUri,
     this.isUploading = false,
@@ -34,6 +36,7 @@ class FileState {
 
   FileState copyWith({
     File? selectedFile,
+    List<int>? fileBytes,
     FileMetadata? fileMetadata,
     String? uploadedFileUri,
     bool? isUploading,
@@ -42,6 +45,7 @@ class FileState {
   }) {
     return FileState(
       selectedFile: selectedFile ?? this.selectedFile,
+      fileBytes: fileBytes ?? this.fileBytes,
       fileMetadata: fileMetadata ?? this.fileMetadata,
       uploadedFileUri: uploadedFileUri ?? this.uploadedFileUri,
       isUploading: isUploading ?? this.isUploading,
@@ -54,7 +58,7 @@ class FileState {
     return FileState();
   }
 
-  bool get hasFile => selectedFile != null && fileMetadata != null;
+  bool get hasFile => (selectedFile != null || fileBytes != null) && fileMetadata != null;
 }
 
 class FileStateNotifier extends StateNotifier<FileState> {
@@ -65,45 +69,64 @@ class FileStateNotifier extends StateNotifier<FileState> {
 
   /// Select a document file
   Future<void> selectDocument() async {
+    print('📄 [FileStateNotifier] selectDocument() called');
     final result = await _fileSelectionService.pickDocument();
+    print('📄 [FileStateNotifier] selectDocument() result: isSuccess=${result.isSuccess}, hasError=${result.hasError}');
     
     if (result.isSuccess) {
+      print('✅ [FileStateNotifier] File selected successfully: ${result.metadata?.name}');
+      print('✅ [FileStateNotifier] Has file: ${result.file != null}, Has bytes: ${result.bytes != null}');
       state = state.copyWith(
         selectedFile: result.file,
+        fileBytes: result.bytes,
         fileMetadata: result.metadata,
         error: null,
       );
+      print('✅ [FileStateNotifier] State updated: hasFile=${state.hasFile}');
     } else if (result.hasError) {
+      print('❌ [FileStateNotifier] Error selecting document: ${result.error}');
       state = state.copyWith(error: result.error);
     }
   }
 
   /// Select an image from gallery
   Future<void> selectImage() async {
+    print('🖼️ [FileStateNotifier] selectImage() called');
     final result = await _fileSelectionService.pickImageFromGallery();
+    print('🖼️ [FileStateNotifier] selectImage() result: isSuccess=${result.isSuccess}, hasError=${result.hasError}');
     
     if (result.isSuccess) {
+      print('✅ [FileStateNotifier] Image selected successfully: ${result.metadata?.name}');
       state = state.copyWith(
         selectedFile: result.file,
+        fileBytes: result.bytes,
         fileMetadata: result.metadata,
         error: null,
       );
+      print('✅ [FileStateNotifier] State updated: hasFile=${state.hasFile}');
     } else if (result.hasError) {
+      print('❌ [FileStateNotifier] Error selecting image: ${result.error}');
       state = state.copyWith(error: result.error);
     }
   }
 
   /// Take a photo with camera
   Future<void> takePhoto() async {
+    print('📸 [FileStateNotifier] takePhoto() called');
     final result = await _fileSelectionService.takePhoto();
+    print('📸 [FileStateNotifier] takePhoto() result: isSuccess=${result.isSuccess}, hasError=${result.hasError}');
     
     if (result.isSuccess) {
+      print('✅ [FileStateNotifier] Photo taken successfully: ${result.metadata?.name}');
       state = state.copyWith(
         selectedFile: result.file,
+        fileBytes: result.bytes,
         fileMetadata: result.metadata,
         error: null,
       );
+      print('✅ [FileStateNotifier] State updated: hasFile=${state.hasFile}');
     } else if (result.hasError) {
+      print('❌ [FileStateNotifier] Error taking photo: ${result.error}');
       state = state.copyWith(error: result.error);
     }
   }
@@ -238,21 +261,31 @@ class SummaryStateNotifier extends StateNotifier<SummaryState> {
 
   /// Generate initial summary
   Future<void> generateSummary({
-    required File file,
+    File? file,
+    List<int>? fileBytes,
     required FileMetadata metadata,
     required SummarySize summarySize,
     String? customInstructions,
   }) async {
+    print('📊 [SummaryStateNotifier] generateSummary() called');
+    print('   - Has file: ${file != null}');
+    print('   - Has bytes: ${fileBytes != null}');
+    print('   - Metadata: ${metadata.name}');
+    
     state = state.copyWith(isGenerating: true, error: null);
 
+    print('📊 [SummaryStateNotifier] Calling generation service...');
     final result = await _generationService.generateInitialSummary(
       file: file,
+      fileBytes: fileBytes,
       metadata: metadata,
       summarySize: summarySize,
       customInstructions: customInstructions,
     );
+    print('📊 [SummaryStateNotifier] Service returned: isSuccess=${result.isSuccess}');
 
     if (result.isSuccess) {
+      print('✅ [SummaryStateNotifier] Creating conversation...');
       final config = SummaryConfig(
         size: summarySize,
         customPrompt: customInstructions,
@@ -260,23 +293,29 @@ class SummaryStateNotifier extends StateNotifier<SummaryState> {
 
       final conversation = SummaryConversation.create(
         conversationId: DateTime.now().millisecondsSinceEpoch.toString(),
-        originalFile: file,
+        originalFile: file ?? File('web:///${metadata.name}'), // Use virtual path for web
         fileMetadata: metadata,
         config: config,
       );
 
+      print('📊 [SummaryStateNotifier] Updating conversation with messages and version...');
       final updatedConversation = conversation.copyWith(
         messages: [result.userMessage!, result.modelMessage!],
         versions: [result.version!],
       );
 
+      print('📊 [SummaryStateNotifier] Updating state...');
       state = state.copyWith(
         conversation: updatedConversation,
         versions: [result.version!],
         currentVersionIndex: 0,
         isGenerating: false,
       );
+      print('✅ [SummaryStateNotifier] State updated successfully');
+      print('   - Has versions: ${state.hasVersions}');
+      print('   - Version count: ${state.versions.length}');
     } else {
+      print('❌ [SummaryStateNotifier] Generation failed: ${result.error}');
       state = state.copyWith(
         isGenerating: false,
         error: result.error,

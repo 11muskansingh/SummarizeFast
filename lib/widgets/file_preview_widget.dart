@@ -7,13 +7,13 @@ import 'common_widgets.dart';
 
 /// Widget to preview selected files
 class FilePreviewWidget extends StatelessWidget {
-  final File file;
+  final File? file; // Optional on web platform
   final FileMetadata metadata;
   final VoidCallback? onRemove;
 
   const FilePreviewWidget({
     super.key,
-    required this.file,
+    this.file,
     required this.metadata,
     this.onRemove,
   });
@@ -115,8 +115,13 @@ class FilePreviewWidget extends StatelessWidget {
   }
 
   Widget _buildImagePreview() {
+    // On web, we can't preview from File, show placeholder
+    if (file == null) {
+      return _buildWebPlaceholder();
+    }
+    
     return Image.file(
-      file,
+      file!,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
         return Center(
@@ -127,6 +132,44 @@ class FilePreviewWidget extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildWebPlaceholder() {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceDark.withOpacity(0.3),
+        borderRadius: AppSpacing.borderRadiusMD,
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _getFileIcon(),
+              size: 64,
+              color: AppColors.primary.withOpacity(0.5),
+            ),
+            SizedBox(height: AppSpacing.sm),
+            Text(
+              'Preview unavailable on web',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            SizedBox(height: AppSpacing.xs),
+            Text(
+              'File ready for processing',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

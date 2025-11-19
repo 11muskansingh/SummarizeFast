@@ -37,123 +37,138 @@ class UploadScreen extends ConsumerWidget {
   }
 
   Widget _buildFilePicker(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: AppSpacing.paddingLG,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Illustration
-          Container(
-            padding: EdgeInsets.all(AppSpacing.xxl),
-            decoration: BoxDecoration(
-              gradient: AppColors.glassGradient,
-              borderRadius: AppSpacing.borderRadiusXL,
-              border: Border.all(
-                color: AppColors.glassMedium,
-                width: 1,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: AppSpacing.paddingLG,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(height: AppSpacing.xxl),
+            
+            // Illustration
+            Container(
+              padding: EdgeInsets.all(AppSpacing.xxl),
+              decoration: BoxDecoration(
+                gradient: AppColors.glassGradient,
+                borderRadius: AppSpacing.borderRadiusXL,
+                border: Border.all(
+                  color: AppColors.glassMedium,
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                Icons.cloud_upload_outlined,
+                size: 80,
+                color: AppColors.primary,
               ),
             ),
-            child: Icon(
-              Icons.cloud_upload_outlined,
-              size: 80,
-              color: AppColors.primary,
+            
+            SizedBox(height: AppSpacing.xl),
+
+            Text(
+              'Choose a file to summarize',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          
-          SizedBox(height: AppSpacing.xl),
 
-          Text(
-            'Choose a file to summarize',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-            textAlign: TextAlign.center,
-          ),
+            SizedBox(height: AppSpacing.sm),
 
-          SizedBox(height: AppSpacing.sm),
+            Text(
+              'Support for PDF, images, and documents up to 10MB',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+              textAlign: TextAlign.center,
+            ),
 
-          Text(
-            'Support for PDF, images, and documents up to 10MB',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-            textAlign: TextAlign.center,
-          ),
+            SizedBox(height: AppSpacing.xxl),
 
-          SizedBox(height: AppSpacing.xxl),
+            // File selection buttons
+            GradientButton(
+              onPressed: () {
+                print('📁 [UploadScreen] Choose Document button pressed');
+                ref.read(fileStateProvider.notifier).selectDocument();
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.description, color: Colors.white),
+                  SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'Choose Document',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-          // File selection buttons
-          GradientButton(
-            onPressed: () => ref.read(fileStateProvider.notifier).selectDocument(),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.description, color: Colors.white),
-                SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Choose Document',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+            SizedBox(height: AppSpacing.md),
+
+            GlassCard(
+              child: InkWell(
+                onTap: () {
+                  print('🖼️ [UploadScreen] Choose from Gallery button pressed');
+                  ref.read(fileStateProvider.notifier).selectImage();
+                },
+                borderRadius: AppSpacing.borderRadiusMD,
+                child: Padding(
+                  padding: AppSpacing.paddingMD,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.photo_library, color: AppColors.primary),
+                      SizedBox(width: AppSpacing.sm),
+                      Text(
+                        'Choose from Gallery',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
 
-          SizedBox(height: AppSpacing.md),
+            SizedBox(height: AppSpacing.md),
 
-          GlassCard(
-            child: InkWell(
-              onTap: () => ref.read(fileStateProvider.notifier).selectImage(),
-              borderRadius: AppSpacing.borderRadiusMD,
-              child: Padding(
-                padding: AppSpacing.paddingMD,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.photo_library, color: AppColors.primary),
-                    SizedBox(width: AppSpacing.sm),
-                    Text(
-                      'Choose from Gallery',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+            GlassCard(
+              child: InkWell(
+                onTap: () {
+                  print('📸 [UploadScreen] Take Photo button pressed');
+                  ref.read(fileStateProvider.notifier).takePhoto();
+                },
+                borderRadius: AppSpacing.borderRadiusMD,
+                child: Padding(
+                  padding: AppSpacing.paddingMD,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.camera_alt, color: AppColors.primary),
+                      SizedBox(width: AppSpacing.sm),
+                      Text(
+                        'Take Photo',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-
-          SizedBox(height: AppSpacing.md),
-
-          GlassCard(
-            child: InkWell(
-              onTap: () => ref.read(fileStateProvider.notifier).takePhoto(),
-              borderRadius: AppSpacing.borderRadiusMD,
-              child: Padding(
-                padding: AppSpacing.paddingMD,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.camera_alt, color: AppColors.primary),
-                    SizedBox(width: AppSpacing.sm),
-                    Text(
-                      'Take Photo',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+            
+            SizedBox(height: AppSpacing.xxl),
+          ],
+        ),
       ),
     );
   }
@@ -204,7 +219,7 @@ class UploadScreen extends ConsumerWidget {
 
                 // File preview
                 FilePreviewWidget(
-                  file: fileState.selectedFile!,
+                  file: fileState.selectedFile,
                   metadata: fileState.fileMetadata!,
                   onRemove: () {
                     ref.read(fileStateProvider.notifier).clearFile();
